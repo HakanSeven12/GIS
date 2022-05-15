@@ -195,7 +195,7 @@ def PlaceText(textData,fontSize, upper):
 def CreateLayer(layerName):
 	layerName = layerName.replace(" ","_")
 	lstObjects = []
-	for obj in FreeCAD.ActiveDocument.Objects: #Check is layername already exists
+	for obj in FreeCAD.ActiveDocument.Objects: #Check if layerName already exists
 		lstObjects.append(obj.Label)
 	if not layerName in lstObjects:
 		FreeCAD.activeDocument().addObject("App::DocumentObjectGroupPython", layerName)
@@ -203,13 +203,13 @@ def CreateLayer(layerName):
 	return obj2
 
 def ArchSiteCreateCheck(SiteName):
-#Create an ArchSiteobject which is used to store data nessecary for GIS2BIM. 
+#Create an ArchSiteObject which is used to store data necessary for GIS2BIM. 
 	lstObjects = []
 	for obj in FreeCAD.ActiveDocument.Objects: #Check is SiteObject already exists and fill parameters
 	    lstObjects.append(obj.Label)
 	if SiteName in lstObjects: 
 		ArchSiteObject = FreeCAD.ActiveDocument.Objects[lstObjects.index(SiteName)]
-	else: #Create Siteobject and add parameters
+	else: #Create SiteObject and add parameters
 	    ArchSiteObject = Arch.makeSite([],[],SiteName)
 	    ArchSiteAddparameters(ArchSiteObject)
 		

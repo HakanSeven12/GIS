@@ -148,7 +148,7 @@ class GISWMS_Dialog(QtWidgets.QDialog):
 		groupBox = QtWidgets.QGroupBox("Input Webserver / Request")
 
 		# combobox with WMS-servers
-		cboDefWMSLab = QtWidgets.QLabel("Predifined WMS Requests", self)		
+		cboDefWMSLab = QtWidgets.QLabel("Predefined WMS Requests", self)		
 		self.cboDefWMS = QtWidgets.QComboBox(self)
 		self.cboDefWMS.addItems(self.TitleList)
 		self.cboDefWMS.currentIndexChanged.connect(self.selectionchange)

@@ -21,7 +21,7 @@
 #***************************************************************************
 
 #Regarding class GeoLocation:
-#    This class is based from the code smaple in this paper:
+#    This class is based from the code sample in this paper:
 #        http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
 #    The owner of that website, Jan Philip Matuschek, is the full owner of
 #    his intellectual property. This class is simply a Python port of his very
@@ -271,7 +271,7 @@ def MortonCode(X,Y,Xmod,Ymod,TileDimension):
 	return z
 
 def NominatimAPI(inputlist):
-    #get lat/lon via an adress using Nominatim API
+    #get lat/lon via an address using Nominatim API
 	URLpart1 = "https://nominatim.openstreetmap.org/search/"
 	URLpart2 = "%20".join(inputlist)
 	URLpart3 = "?format=xml&addressdetails=1&limit=1&polygon_svg=1"

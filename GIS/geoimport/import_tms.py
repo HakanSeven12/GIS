@@ -146,7 +146,7 @@ class GIS_TMS_Dialog(QtWidgets.QDialog):
 		groupBox = QtWidgets.QGroupBox("Input Webserver / Request")
 
 		# combobox with TMS-servers
-		cboDefTMSLab = QtWidgets.QLabel("Predifined TMS Requests", self)		
+		cboDefTMSLab = QtWidgets.QLabel("Predefined TMS Requests", self)		
 		self.cboDefTMS = QtWidgets.QComboBox(self)
 		self.cboDefTMS.addItems(self.TitleList)
 		self.cboDefTMS.currentIndexChanged.connect(self.selectionchange)
@@ -236,7 +236,7 @@ class GIS_TMS_Dialog(QtWidgets.QDialog):
 		height = float(self.bboxHeight.text())
 		if width > 1000 or height > 1000 and int(self.zoomLevel.text()) >17:
 			dialog = QtWidgets.QMessageBox()
-			dialog.setText("Boundingbox is larger then 1000 meters. Set zoomlevel lower then 18 to prevent extreem large imagefiles")
+			dialog.setText("Boundingbox is larger then 1000 meters. Set zoomlevel lower then 18 to prevent extremely large imagefiles")
 			dialog.setWindowTitle("Warning")
 			dialog.exec_() 
 		else: test = "test"
