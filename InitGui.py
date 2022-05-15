@@ -33,7 +33,7 @@ class GISWorkbench(FreeCADGui.Workbench):
 
     MenuText = 'GIS'
     ToolTip = 'GIS Tools Workbench'
-    Icon = icons_path + '/workbench.svg'
+    Icon = icons_path + '/SetGeoLocation.svg'
 
     def __init__(self):
         #dictionary key = name of command / command group.
@@ -49,15 +49,31 @@ class GISWorkbench(FreeCADGui.Workbench):
         self.command_ui = {
             'Geodata Tools': {
                 'gui': self.menu + self.toolbar,
-                'cmd': []},
+                'cmd': ['Import CSV',
+                    'Import GPX',
+                    'Import Heights',
+                    'Import SRTM',
+                    'Import XYZ',
+                    'Import LatLonZ',
+                    'Import Image',
+                    'Import ASTER',
+                    'Import LIDAR',
+                    'ElevationGrid',
+                    'Import EMIR']},
 
             'Web Service Tools': {
                 'gui': self.menu + self.toolbar,
-                'cmd': []},
+                'cmd': ['Set Geo Location',
+                    'Import TMS',
+                    'Import WMS',
+                    'Import WFS',
+                    'Import OSM',
+                    'Import PDOK']},
 
             'Other Tools': {
                 'gui': self.menu + self.toolbar,
-                'cmd': []},
+                'cmd': ['Navigator',
+                    'Create House']},
         }
 
     def GetClassName(self):
@@ -71,7 +87,7 @@ class GISWorkbench(FreeCADGui.Workbench):
         Called when the workbench is first activated.
         """
         from GIS_libs import CommandGroup
-        from GIS import gui
+        from GIS import geoimport_gui
 
         for palette, tool in self.command_ui.items():
             if tool['gui'] & self.toolbar:
