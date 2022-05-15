@@ -2,8 +2,8 @@
 Import srtm data
 """
 
-# see getData methode. A service which provides SRMT data in OSMXML file format was used
-# from Stuttgart university
+# see getData method. A service which provides SRMT data in OSMXML file format
+# was used from Stuttgart university
 # see https://wiki.openstreetmap.org/wiki/SRTM#Data_in_OSM_format_.28XML.29
 # this data is no longer available
 # no other resource is known ATM

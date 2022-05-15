@@ -188,7 +188,7 @@ class GISWFS_Dialog(QtWidgets.QDialog):
 	def webserverGroup(self):
 		groupBox = QtWidgets.QGroupBox("Input Webserver / Request")
 
-		cboDefWFSLab = QtWidgets.QLabel("Predifined WFS Requests", self)		
+		cboDefWFSLab = QtWidgets.QLabel("Predefined WFS Requests", self)		
 		self.cboDefWFS = QtWidgets.QComboBox(self)
 		self.cboDefWFS.addItems(self.TitleList)
 		self.cboDefWFS.currentIndexChanged.connect(self.selectionchange)
