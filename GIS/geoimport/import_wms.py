@@ -35,9 +35,9 @@ from PIL import Image, ImageOps
 
 import FreeCAD
 
-from PyPackages import GIS2BIM
-from PyPackages import GIS2BIM_FreeCAD
-from PyPackages import GIS2BIM_GUI
+from .PyPackages import GIS2BIM
+from .PyPackages import GIS2BIM_FreeCAD
+from .PyPackages import GIS2BIM_GUI
 
 class GISWMS_Dialog(QtWidgets.QDialog):
 

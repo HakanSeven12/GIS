@@ -35,10 +35,10 @@ from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QUrl
 
 import importlib
-from PyPackages import GIS2BIM
-from PyPackages import GIS2BIM_FreeCAD
-from PyPackages import GIS2BIM_CRS 
-from PyPackages import GIS2BIM_GUI
+from .PyPackages import GIS2BIM
+from .PyPackages import GIS2BIM_FreeCAD
+from .PyPackages import GIS2BIM_CRS 
+from .PyPackages import GIS2BIM_GUI
 import FreeCAD
 #importlib.reload(GIS2BIM_GUI)
 
@@ -46,7 +46,7 @@ import os
 import time
 import re
 
-from freecad.trails import geo_origin
+from Trails.get import get_georigin
 
 class GISLocation_Dialog(QtWidgets.QDialog):
 
@@ -251,7 +251,7 @@ class GISLocation_Dialog(QtWidgets.QDialog):
 		SiteObject.CRS_EPSG_Description = GIS2BIM_CRS.getCRSdata(CRS_EPSG_SRID)
 		#Set GeoOrigin
 		if self.CBGeoOrigin.isChecked() is True:
-			obj = geo_origin.get()	
+			obj = get_georigin.get()	
 			obj.Origin = FreeCAD.Vector(float(Transformation[0])*1000, float(Transformation[1])*1000, 0)
 		if self.CBAerialphoto.isChecked() is True:
 			fileLocationTMS = self.tempFolderPath + 'ESRI_aerialphoto.jpg'
