@@ -1,11 +1,27 @@
-# -------------------------------------------------
-# -- osm map importer gui
-# --
-# -- microelly 2016 v 0.4
-# -- Bernd Hahnebach <bernd@bimstatik.org> 2020
-# --
-# -- GNU Lesser General Public License (LGPL)
-# -------------------------------------------------
+# ***************************************************************************
+# *                                                                         *
+# *   Copyright (c) 2016 microelly <>                                       *
+# *   Copyright (c) 2020 Bernd Hahnebach <bernd@bimstatik.org>              *
+# *   Copyright (c) 2022 Hakan Seven <hakanseven12@gmail.com>               *
+# *                                                                         *
+# *   This program is free software; you can redistribute it and/or modify  *
+# *   it under the terms of the GNU Lesser General Public License (LGPL)    *
+# *   as published by the Free Software Foundation; either version 2 of     *
+# *   the License, or (at your option) any later version.                   *
+# *   for detail see the LICENCE text file.                                 *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this program; if not, write to the Free Software   *
+# *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+# *   USA                                                                   *
+# *                                                                         *
+# ***************************************************************************
+
 """gui for import data from openstreetmap"""
 
 import FreeCAD, FreeCADGui
@@ -14,7 +30,7 @@ import re
 import WebGui
 
 from GIS_libs import ui_path
-from ..geoimport.import_osm import import_osm2
+from ..geoimport.import_osm import import_osm
 
 
 class ImportOSM:
@@ -38,41 +54,11 @@ class ImportOSM:
         self.form.pushButton_downloadData.clicked.connect(self.download_data)
         self.form.pushButton_showWeb.clicked.connect(self.show_web)
 
-    def import_osm(self, lat, lon, bk, progressbar, status, elevation):
-        """
-        import the osm data by the use of import_osm module
-        """
-        has_finished = import_osm2(
-            lat,
-            lon,
-            bk,
-            progressbar,
-            status,
-            elevation
-        )
-        return has_finished
-
-    def run(self, lat, lon):
-        """
-        run(self,lat,lon) imports area
-        with center coordinates latitude lat, longitude lon
-        """
-        s = self.root.ids["s"].value()
-        key = "%0.7f" % (lat) + "," + "%0.7f" % (lon)
-        self.root.ids["bl"].setText(key)
-        self.import_osm(
-            lat,
-            lon,
-            float(s)/10,
-            self.root.ids["progb"],
-            self.root.ids["status"],
-            False
-        )
-
     def show_help(self):
 
         msg = QtWidgets.QMessageBox()
         msg.setText("<b>Help</b>")
+
         msg.setInformativeText(
             "Import_osm map dialogue box can also accept links "
             "from following sites in addition to "
@@ -84,8 +70,8 @@ class ImportOSM:
             "e.g. 30.8611,75.8610</ul><br>"
             "If in any case, the latitude & longitudes are estimated incorrectly, "
             "you can use different separators in separator box "
-            "or can put latitude & longitude directly into their respective boxes."
-        )
+            "or can put latitude & longitude directly into their respective boxes.")
+
         msg.exec_()
 
     def get_separator(self):
@@ -111,7 +97,7 @@ class ImportOSM:
         seperator = self.form.lineEdit_seperator.text()
 
         split = re.split(seperator, map_link)
-        flag = init_flag = 0
+        flag = 0
 
         for text in split:
             try:
@@ -123,7 +109,7 @@ class ImportOSM:
                         self.form.lineEdit_longitude.setText(text)
                     flag += 1
             except Exception:
-                flag = init_flag
+                flag = 0
 
     def swap(self):
         latitude = self.form.lineEdit_latitude.text()
@@ -136,13 +122,10 @@ class ImportOSM:
 
         latitude = self.form.lineEdit_latitude.text()
         longitude = self.form.lineEdit_longitude.text()
-        lat = float(latitude)
-        lon = float(longitude)
-
         length = self.form.horizontalSlider_length.value()
         elevation = self.form.checkBox_elevation.isChecked()
 
-        rc=self.import_osm(float(lat),float(lon),float(length)/10,
+        import_osm(float(latitude),float(longitude),float(length)/10,
             self.form.progressBar,self.form.label_status,elevation)
 
     def show_web(self):
