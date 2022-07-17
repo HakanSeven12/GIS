@@ -227,7 +227,8 @@ class import_osm:
 
     def Activated(self):
         from .guigeoimport import gui_import_osm
-        gui_import_osm.mydialog()
+        panel = gui_import_osm.ImportOSM()
+        FreeCADGui.Control.showDialog(panel)
 
     def GetResources(self):
         return {

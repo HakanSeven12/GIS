@@ -8,21 +8,35 @@
 # -------------------------------------------------
 """gui for import data from openstreetmap"""
 
-
+import FreeCAD, FreeCADGui
+from PySide2 import QtWidgets
+import re
 import WebGui
-from PySide import QtGui
 
-# import FreeCAD
-# import FreeCADGui
-
-from ..geoimport import miki
+from GIS_libs import ui_path
 from ..geoimport.import_osm import import_osm2
-from ..geoimport.say import say
 
 
-# the gui backend
-class MyApp(object):
-    """execution layer of the Gui"""
+class ImportOSM:
+    """
+    Execution layer of the Gui
+    """
+
+    def __init__(self):
+        """
+        Constructor
+        """
+        # Get *.ui file(s)
+        self.form = FreeCADGui.PySideUic.loadUi(ui_path + "/import_osm.ui")
+
+        # UI connections
+        self.form.lineEdit_mapLink.textChanged.connect(self.get_separator)
+        self.form.pushButton_help.clicked.connect(self.show_help)
+        self.form.pushButton_getCoordinates.clicked.connect(self.get_coordinate)
+        self.form.pushButton_swap.clicked.connect(self.swap)
+        self.form.horizontalSlider_length.valueChanged.connect(self.update_length)
+        self.form.pushButton_downloadData.clicked.connect(self.download_data)
+        self.form.pushButton_showWeb.clicked.connect(self.show_web)
 
     def import_osm(self, lat, lon, bk, progressbar, status, elevation):
         """
@@ -55,33 +69,9 @@ class MyApp(object):
             False
         )
 
-    def run_alex(self):
-        """imports Berlin Aleancderplatz"""
-        self.run(52.52128, lon=13.41646)
+    def show_help(self):
 
-    def run_paris(self):
-        """imports Paris"""
-        self.run(48.85167, 2.33669)
-
-    def run_tokyo(self):
-        """imports Tokyo near tower"""
-        self.run(35.65905, 139.74991)
-
-    def run_spandau(self):
-        """imports Berlin Spandau"""
-        self.run(52.508, 13.18)
-
-    def run_co2(self):
-        """imports Coburg University and School"""
-        self.run(50.2631171, 10.9483)
-
-    def run_sternwarte(self):
-        """imports Sonneberg Neufang observatorium"""
-        self.run(50.3736049, 11.191643)
-
-    def showHelpBox(self):
-
-        msg = QtGui.QMessageBox()
+        msg = QtWidgets.QMessageBox()
         msg.setText("<b>Help</b>")
         msg.setInformativeText(
             "Import_osm map dialogue box can also accept links "
@@ -98,199 +88,76 @@ class MyApp(object):
         )
         msg.exec_()
 
-    def showHelpBoxY(self):
-        # self.run_sternwarte()
-        say("showHelpBox called")
+    def get_separator(self):
+        map_link = self.form.lineEdit_mapLink.text()
+        seperator = self.form.lineEdit_seperator
+        if map_link.find("openstreetmap.org") != -1:
+            seperator.setText("/")
+        elif map_link.find("google.com") != -1:
+            seperator.setText("@|,")
+        elif map_link.find("bing.com") != -1:
+            seperator.setText("=|~|&")
+        elif map_link.find("wego.here.com") != -1:
+            seperator.setText("=|,")
+        elif map_link.find(",") != -1:
+            seperator.setText(",")
+        elif map_link.find(":") != -1:
+            seperator.setText(":")
+        elif map_link.find("/") != -1:
+            seperator.setText("/")
 
-    def getSeparator(self):
-        bl = self.root.ids["bl"].text()
-        if bl.find("openstreetmap.org") != -1:
-            self.root.ids["sep"].setText("/")
-        elif bl.find("google.co") != -1:
-            self.root.ids["sep"].setText("@|,")
-        elif bl.find("bing.com") != -1:
-            self.root.ids["sep"].setText("=|~|&")
-        elif bl.find("wego.here.com") != -1:
-            self.root.ids["sep"].setText("=|,")
-        elif bl.find(",") != -1:
-            self.root.ids["sep"].setText(",")
-        elif bl.find(":") != -1:
-            self.root.ids["sep"].setText(":")
-        elif bl.find("/") != -1:
-            self.root.ids["sep"].setText("/")
+    def get_coordinate(self):
+        map_link = self.form.lineEdit_mapLink.text()
+        seperator = self.form.lineEdit_seperator.text()
 
-    def getCoordinate(self):
-        sep = self.root.ids["sep"].text()
-        bl = self.root.ids["bl"].text()
-        import re
-        spli = re.split(sep, bl)
-        init_flag = "0"
-        flag = init_flag
-        for x in spli:
+        split = re.split(seperator, map_link)
+        flag = init_flag = 0
+
+        for text in split:
             try:
-                float(x)
-                if x.find(".") != -1:
-                    if flag == "0":
-                        self.root.ids["lat"].setText(x)
-                        flag = "1"
-                    elif flag == "1":
-                        self.root.ids["long"].setText(x)
-                        flag = "2"
+                float(text)
+                if text.find(".") != -1:
+                    if flag == 0:
+                        self.form.lineEdit_latitude.setText(text)
+                    elif flag == 1:
+                        self.form.lineEdit_longitude.setText(text)
+                    flag += 1
             except Exception:
                 flag = init_flag
 
     def swap(self):
-        tmp1 = self.root.ids["lat"].text()
-        tmp2 = self.root.ids["long"].text()
-        self.root.ids["long"].setText(tmp1)
-        self.root.ids["lat"].setText(tmp2)
+        latitude = self.form.lineEdit_latitude.text()
+        longitude = self.form.lineEdit_longitude.text()
+        self.form.lineEdit_latitude.setText(longitude)
+        self.form.lineEdit_longitude.setText(latitude)
 
-    def downloadData(self):
+    def download_data(self):
         """download data from osm"""
-        button = self.root.ids["runbl1"]
-        button.hide()
-        br = self.root.ids["running"]
-        br.show()
 
-        bl_disp = self.root.ids["lat"].text()
-        lat = float(bl_disp)
-        bl_disp = self.root.ids["long"].text()
-        lon = float(bl_disp)
+        latitude = self.form.lineEdit_latitude.text()
+        longitude = self.form.lineEdit_longitude.text()
+        lat = float(latitude)
+        lon = float(longitude)
 
-        s = self.root.ids["s"].value()
-        elevation = self.root.ids["elevation"].isChecked()
+        length = self.form.horizontalSlider_length.value()
+        elevation = self.form.checkBox_elevation.isChecked()
 
-        rc = self.import_osm(
-            float(lat),
-            float(lon),
-            float(s)/10,
-            self.root.ids["progb"],
-            self.root.ids["status"],
-            elevation
-        )
-        if not rc:
-            button = self.root.ids["runbl2"]
-            button.show()
-        else:
-            button = self.root.ids["runbl1"]
-            button.show()
-        br.hide()
+        rc=self.import_osm(float(lat),float(lon),float(length)/10,
+            self.form.progressBar,self.form.label_status,elevation)
 
-    def applyData(self):
-        """apply downloaded or cached data to create the FreeCAD models"""
-        button = self.root.ids["runbl2"]
-        button.hide()
-        br = self.root.ids["running"]
-        br.show()
-
-        bl_disp = self.root.ids["lat"].text()
-        lat = float(bl_disp)
-        bl_disp = self.root.ids["long"].text()
-        lon = float(bl_disp)
-
-        s = self.root.ids["s"].value()
-        elevation = self.root.ids["elevation"].isChecked()
-
-        self.import_osm(
-            float(lat),
-            float(lon),
-            float(s)/10,
-            self.root.ids["progb"],
-            self.root.ids["status"],
-            elevation
-        )
-        button = self.root.ids["runbl1"]
-        button.show()
-        br.hide()
-
-    def showMap(self):
+    def show_web(self):
         """
         open a webbrowser window and display
         the openstreetmap presentation of the area
         """
 
-        bl_disp = self.root.ids["lat"].text()
-        lat = float(bl_disp)
-        bl_disp = self.root.ids["long"].text()
-        lon = float(bl_disp)
+        latitude = self.form.lineEdit_latitude.text()
+        longitude = self.form.lineEdit_longitude.text()
+        lat = float(latitude)
+        lon = float(longitude)
 
-        # s = self.root.ids["s"].value()
-        WebGui.openBrowser(
-            "http://www.openstreetmap.org/#map=16/{}/{}".format(lat, lon)
-        )
+        WebGui.openBrowser("http://www.openstreetmap.org/#map=16/{}/{}".format(lat, lon))
 
-    def showDistanceOnLabel(self):
-        distance = self.root.ids["s"].value()
-        showDistanceLabel = self.root.ids["showDistanceLabel"]
-        showDistanceLabel.setText(
-            "Distance is {} km.".format(float(distance)/10)
-        )
-
-
-# the gui startup
-def mydialog():
-    """ starts the gui dialog """
-    print("OSM gui startup")
-    app = MyApp()
-
-    my_miki = miki.Miki()
-    my_miki.app = app
-    app.root = my_miki
-
-    from .miki_import_osm import s6
-    my_miki.parse2(s6)
-    my_miki.run(s6)
-    return my_miki
-
-
-def importOSM():
-    mydialog()
-
-
-"""
-#-----------------
-# verarbeiten
-
-import xml.etree.ElementTree as ET
-
-fn="/home/thomas/.FreeCAD//geodat3/50.340722-11.232647-0.015"
-#tree = ET.parse(fn)
-
-data_as_string=''<?xml version="1.0"?><data>
-    <country name="Liechtenstein">
-        <rank>1</rank>
-        <year>2008</year>
-        <gdppc>141100</gdppc>
-        <neighbor name="Austria" direction="E"/>
-        <neighbor name="Switzerland" direction="W"/>
-    </country>
-    <country name="Singapore">
-        <rank>4</rank>
-        <year>2011</year>
-        <gdppc>59900</gdppc>
-        <neighbor name="Malaysia" direction="N"/>
-    </country>
-    <country name="Panama">
-        <rank>68</rank>
-        <year>2011</year>
-        <gdppc>13600</gdppc>
-        <neighbor name="Costa Rica" direction="W"/>
-        <neighbor name="Colombia" direction="E"/>
-    </country>
-</data>
-''
-
-root = ET.fromstring(data_as_string)
-
-
-for element in tree.getiterator("node"):
-    print(element.attrib)
-
-
-root = tree.getroot()
-ET.dump(root)
-
-for elem in root:
-    print (elem.tag,elem.attrib)
-#----------------
-"""
+    def update_length(self):
+        length = self.form.horizontalSlider_length.value()
+        self.form.label_length.setText("Length is {} km".format(float(length)/10))
