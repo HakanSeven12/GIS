@@ -105,7 +105,7 @@ def import_osm(latitude, longitude, length, progressbar=None, status=None, eleva
     # Import objects
     for obj in objects:
         # Get object properties
-        name, object_type, nr, building_height = get_way_information(obj)
+        name, object_type, use_type, number, building_height = get_properties(obj)
 
         # Get object polygon points
         if not elevation:
@@ -117,7 +117,7 @@ def import_osm(latitude, longitude, length, progressbar=None, status=None, eleva
             # Get heights for object polygon points
             polygon_points = get_ppts_with_heights(obj, object_type, points, nodesbyid, baseheight)
 
-        # a wire for each way polygon
+        # Wire for each object polygon
         polygon_obj = doc.addObject("Part::Feature", "OsmPolygon")
         polygon_obj.Label = obj.params["id"]
         polygon_obj.Shape = Part.makePolygon(polygon_points)
@@ -131,11 +131,13 @@ def import_osm(latitude, longitude, length, progressbar=None, status=None, eleva
             buildings.addObject(osm_object)
             osm_object.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
             osm_object.Solid = True
+
             if building_height == 0:
-                building_height = 3000
+                building_height = 2800
+
             osm_object.Dir = (0, 0, building_height)
 
-        elif object_type == "highway":
+        elif object_type == "road":
             roads.addObject(osm_object)
             osm_object.ViewObject.LineColor = (0.0, 0.0, 1.0)
             osm_object.ViewObject.LineWidth = 10
@@ -143,13 +145,13 @@ def import_osm(latitude, longitude, length, progressbar=None, status=None, eleva
         elif object_type == "landuse":
             landuse.addObject(osm_object)
             osm_object.Solid = True
-            if nr == "residential":
+            if use_type == "residential":
                 osm_object.ViewObject.ShapeColor = (1.0, 0.6, 0.6)
-            elif nr == "meadow":
+            elif use_type == "meadow":
                 osm_object.ViewObject.ShapeColor = (0.0, 1.0, 0.0)
-            elif nr == "farmland":
+            elif use_type == "farmland":
                 osm_object.ViewObject.ShapeColor = (0.8, 0.8, 0.0)
-            elif nr == "forest":
+            elif use_type == "forest":
                 osm_object.ViewObject.ShapeColor = (1.0, 0.4, 0.4)
 
         else:
@@ -165,6 +167,43 @@ def import_osm(latitude, longitude, length, progressbar=None, status=None, eleva
 
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.activeDocument().ActiveView.viewAxonometric()
+
+def get_osmdata(latitude, longitude, length):
+    # If there is no backup, connect to OSM api
+    storage = os.path.join(FreeCAD.ConfigGet("UserAppData"), "OsmData")
+    if not os.path.isdir(storage):
+        os.makedirs(storage)
+
+    backup = os.path.join(storage, "{}-{}-{}".format(latitude, longitude, length))
+    FreeCAD.Console.PrintMessage("Local OSM data file: {}\n".format(backup))
+
+    try:
+        FreeCAD.Console.PrintMessage("Try to read data from a former existing OSM data file...\n")
+        tree = my_xmlparser.getData(backup)
+
+    except Exception:
+        FreeCAD.Console.PrintMessage("No former existing osm data file\n")
+        FreeCAD.Console.PrintMessage("Connecting to openstreetmap.org...\n")
+
+        # Find the boundary
+        b1 = latitude - length / 1113 * 10
+        l1 = longitude - length / 713 * 10
+        b2 = latitude + length / 1113 * 10
+        l2 = longitude + length / 713 * 10
+
+        koord_str = "{},{},{},{}".format(l1, b1, l2, b2)
+        source = "http://api.openstreetmap.org/api/0.6/map?bbox=" + koord_str
+
+        response = urllib.request.urlopen(source)
+
+        # Write to file for later usage
+        osm_file = open(backup, "w", encoding="utf-8")
+        osm_file.write(response.read().decode("utf8"))
+        osm_file.close()
+
+        tree = my_xmlparser.getData(backup)
+
+    return tree
 
 def map_data(nodes, bounds):
     # Center of the scene
@@ -194,117 +233,55 @@ def map_data(nodes, bounds):
         ll = tm.fromGeographic(float(n.params["lat"]), float(n.params["lon"]))
         points[str(n.params["id"])] = FreeCAD.Vector(ll[0] - center[0], ll[1] - center[1], 0)
 
-    return (tm, size, corner_min, points, nodesbyid)
+    return tm, size, corner_min, points, nodesbyid
 
-def get_osmdata(b, l, bk):
-
-    dn = os.path.join(FreeCAD.ConfigGet("UserAppData"), "geodat_osm")
-    if not os.path.isdir(dn):
-        os.makedirs(dn)
-    fn = os.path.join(dn, "{}-{}-{}".format(b, l, bk))
-    say("Local osm data file:")
-    say("{}".format(fn))
-
-    # TODO: do much less in try/except
-    # use os for file existence etc.
-    tree = None
-    try:
-        say("Try to read data from a former existing osm data file ... ")
-        f = open(fn, "r")
-        content = f.read()  # try to read it
-        False if content else True  # get pylint and LGTM silent
-        # really read fn before skipping new internet upload
-        # because fn might be empty or does have wrong encoding
-        tree = my_xmlparser.getData(fn)
-    except Exception:
-        say(
-            "No former existing osm data file, "
-            "connecting to openstreetmap.org ..."
-        )
-        lk = bk
-        b1 = b - bk / 1113 * 10
-        l1 = l - lk / 713 * 10
-        b2 = b + bk / 1113 * 10
-        l2 = l + lk / 713 * 10
-        koord_str = "{},{},{},{}".format(l1, b1, l2, b2)
-        source = "http://api.openstreetmap.org/api/0.6/map?bbox=" + koord_str
-        say(source)
-
-        response = urllib.request.urlopen(source)
-
-        # the file we write into needs uft8 encoding
-        f = open(fn, "w", encoding="utf-8")
-        # decode makes a string out of the bytesstring
-        f.write(response.read().decode("utf8"))
-        f.close()
-
-        # writing the file is only for later usage
-        # thus may be first parse the data and afterwards write it ... ?
-        tree = my_xmlparser.getData(fn)
-
-    if tree is not None:
-        return tree
-    else:
-        return None
-
-def get_way_information(w):
-    st = ""
-    st2 = ""
-    nr = ""
+def get_properties(obj):
+    name = ""
+    street = ""
+    number = ""
+    use_type = ""
+    object_type = ""
     building_height = 0
-    # ci is never used
-    # ci = ""
-    way_type = ""
 
-    for t in w.getiterator("tag"):
+    for tag in obj.getiterator("tag"):
         try:
-            if str(t.params["k"]) == "building":
-                way_type = "building"
-                if st == "":
-                    st = "building"
+            if str(tag.params["k"]) == "name":
+                name = tag.params["v"]
 
-            if str(t.params["k"]) == "landuse":
-                way_type = "landuse"
-                st = t.params["k"]
-                nr = t.params["v"]
+            if str(tag.params["k"]) == "ref":
+                name += " /" + tag.params["v"]
 
-            if str(t.params["k"]) == "highway":
-                way_type = "highway"
-                st = t.params["k"]
+            if str(tag.params["k"]) == "building":
+                object_type = "building"
 
-            if str(t.params["k"]) == "addr:city":
+            elif str(tag.params["k"]) == "landuse":
+                object_type = "landuse"
+                use_type = tag.params["v"]
+
+            elif str(tag.params["k"]) == "highway":
+                object_type = "road"
+
+            if str(tag.params["k"]) == "addr:city":
                 pass
-                # ci is never used
-                # ci = t.params["v"]
 
-            if str(t.params["k"]) == "name":
-                nr = t.params["v"]
+            if str(tag.params["k"]) == "addr:street":
+                street = tag.params["v"]
 
-            if str(t.params["k"]) == "ref":
-                nr = t.params["v"]+" /"
+            if str(tag.params["k"]) == "addr:housenumber":
+                number = str(tag.params["v"])
 
-            if str(t.params["k"]) == "addr:street":
-                st2 = " "+t.params["v"]
+            if str(tag.params["k"]) == "building:levels":
+                building_height = int(str(tag.params["v"]))*1000*2.8
 
-            if str(t.params["k"]) == "addr:housenumber":
-                nr = str(t.params["v"])
-
-            if str(t.params["k"]) == "building:levels":
-                if building_height == 0:
-                    building_height = int(str(t.params["v"]))*1000*3
-
-            if str(t.params["k"]) == "building:height":
-                building_height = int(str(t.params["v"]))*1000
+            if str(tag.params["k"]) == "building:height":
+                building_height = int(str(tag.params["v"]))*1000
 
         except Exception:
-            sayErr("unexpected error {}".format(50*"#"))
+            FreeCAD.Console.PrintError("unexpected error {}\n".format(50*"#"))
 
-    name = "{}{} {}".format(st, st2, nr)
-    if name == " ":
-        name = "landuse xyz"
+    if not name: name = "{} {} {}".format(object_type, street, number)
 
-    return (name, way_type, nr, building_height)
-
+    return (name, object_type, use_type, number, building_height)
 
 def get_elebase_sh(corner_min, size, baseheight, tm):
 
